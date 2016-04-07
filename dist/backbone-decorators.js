@@ -11,29 +11,33 @@
      * to a namespace
      */
 
+    function onDecoratorFactory(decoratorName, propertyName) {
+        return function (eventName) {
+            return function (target, name, descriptor) {
+                if (!eventName) {
+                    throw new Error('The ' + decoratorName + ' decorator requires an eventName argument');
+                }
+                if (_.isFunction(target[propertyName])) {
+                    throw new Error('The ' + decoratorName + ' decorator is not compatible with ' + propertyName + ' as method form');
+                    return;
+                }
+                if (target[propertyName] && !_.has(target, propertyName)) {
+                    target[propertyName] = _.clone(target[propertyName]);
+                }
+                if (!target[propertyName]) {
+                    target[propertyName] = {};
+                }
+                target[propertyName][eventName] = name;
+                return descriptor;
+            };
+        };
+    }
+
     // Backbone Decorators
 
     // Views
 
-    function on(eventName) {
-        return function (target, name, descriptor) {
-            if (target.events && !_.has(target, 'events')) {
-                target.events = _.clone(target.events);
-            }
-            if (!target.events) {
-                target.events = {};
-            }
-            if (_.isFunction(target.events)) {
-                throw new Error('The on decorator is not compatible with an events method');
-                return;
-            }
-            if (!eventName) {
-                throw new Error('The on decorator requires an eventName argument');
-            }
-            target.events[eventName] = name;
-            return descriptor;
-        };
-    }
+    var on = onDecoratorFactory('on', 'events');
 
     function tagName(value) {
         return function decorator(target) {
@@ -109,39 +113,9 @@
 
     // Views
 
-    function onModel(eventName) {
-        return function (target, name, descriptor) {
-            if (!target.modelEvents) {
-                target.modelEvents = {};
-            }
-            if (_.isFunction(target.modelEvents)) {
-                throw new Error('The onModel decorator is not compatible with a modelEvents method');
-                return;
-            }
-            if (!eventName) {
-                throw new Error('The onModel decorator requires an eventName argument');
-            }
-            target.modelEvents[eventName] = name;
-            return descriptor;
-        };
-    }
-
-    function onCollection(eventName) {
-        return function (target, name, descriptor) {
-            if (!target.collectionEvents) {
-                target.collectionEvents = {};
-            }
-            if (_.isFunction(target.collectionEvents)) {
-                throw new Error('The onCollection decorator is not compatible with a collectionEvents method');
-                return;
-            }
-            if (!eventName) {
-                throw new Error('The onCollection decorator requires an eventName argument');
-            }
-            target.collectionEvents[eventName] = name;
-            return descriptor;
-        };
-    }
+    var onModel = onDecoratorFactory('onModel', 'modelEvents');
+    var onCollection = onDecoratorFactory('onCollection', 'modelEvents');
+    var onChild = onDecoratorFactory('onChild', 'childEvents');
 
     function template(value) {
         return function decorator(target) {
@@ -243,6 +217,7 @@
     exports.route = route;
     exports.onModel = onModel;
     exports.onCollection = onCollection;
+    exports.onChild = onChild;
     exports.template = template;
     exports.childView = childView;
     exports.childViewContainer = childViewContainer;
